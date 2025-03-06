@@ -1,0 +1,6 @@
+# Ignore virtual environment
+lm_finetune/
+.env/
+
+# Ignore shell script files
+*.sh

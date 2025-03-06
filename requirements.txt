@@ -1,0 +1,14 @@
+transformers 
+datasets 
+torch 
+evaluate 
+rouge_score 
+hydra-core
+OmegaConf
+torchmetrics
+rouge_score
+accelerate
+numpy
+scipy
+nltk
+evaluate
