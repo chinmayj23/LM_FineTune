@@ -7,14 +7,14 @@ data:
   chapter_start_pattern: "CHAPTER I"
   chapter_end_pattern: "CHAPTER II"
   instruction_dataset: "LNTANOooo/open_hermes2.5_v3"
-  eval_samples: 20
-  mmlu_samples: 20
+  eval_samples: 100
+  mmlu_samples: 100
   excerpt_size: 2048
 
 training:
   learning_rate: 2e-5
   batch_size: 4
-  num_epochs: 2
+  num_epochs: 50
   max_length: 2048
   gradient_accumulation_steps: 4
   optimizer: AdamW

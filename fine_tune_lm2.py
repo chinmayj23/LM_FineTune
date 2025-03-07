@@ -299,29 +299,37 @@ def evaluate_mmlu(model, tokenizer, device, num_samples=50):
         return accuracy
     
 def extract_book_qa_pairs(config, num_pairs=5):
-    dataset = load_dataset("deepmind/narrativeqa", split="train")
+    dataset = load_dataset("deepmind/narrativeqa",split='test')
     target_url = config.data.book_path
-    book_qa = [sample for sample in dataset if target_url.lower() in sample.document.url.lower()]
-    if not book_qa:
-        print(f"No Q&A pairs found for '{target_url}' in the NarrativeQA dataset.")
+    book_qa=[]
+    for sample in dataset:
+        # print(sample['document'].get('kind', ''))
+        if (target_url.split('/')[-2] in sample['document'].get('url', '').lower() and sample['document'].get('kind', '').lower()=="gutenberg"):
+            book_qa.append(sample)
+    if len(book_qa)==0:
+        print(f"No Q&A pairs found for '{target_url}' in the NarrativeQA dataset.\nUsing personally curated dataset")
+        with open('/home/c01joch/CISPA-az6/dprune_memorization-2024/LM_FineTune/qa_pairs.json', 'r') as file:
+            book_qa = json.load(file)
+    if len(book_qa)==0:
         return []
+
     qa_pairs = []
     for sample in book_qa:
-        question = sample.question
-        answers = [ans['text'] for ans in sample.answers]
+        question = sample["question"]["text"]
+        answers = [ans['text'] for ans in sample["answers"]]
         qa_pairs.append((question, answers))
 
     # Limit to the specified number of Q&A pairs
     return qa_pairs[:num_pairs]
 
-def generate_answer(model, tokenizer, config, question):
+def generate_answer(model, tokenizer, config, question, device):
     
-    inputs = tokenizer(question, truncation=True, padding = 'max_length', max_length=config.training.max_length,return_tensors='pt')
+    inputs = tokenizer(question, truncation=True, padding = 'max_length', max_length=config.training.max_length,return_tensors='pt').to(device)
     outputs = model.generate(inputs.input_ids, max_length=config.training.max_length)
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return answer
 
-def evaluate_qa(model, tokenizer, config): #Relying a little extra on ChatGPT for this
+def evaluate_qa(model, tokenizer, config, device): #Relying a little extra on ChatGPT for this
     qa_pairs = extract_book_qa_pairs(config)
     references = []
     hypotheses = []
@@ -333,7 +341,7 @@ def evaluate_qa(model, tokenizer, config): #Relying a little extra on ChatGPT fo
 
     for question, reference_answers in qa_pairs:
         # Generate answer
-        generated_answer = generate_answer(model, tokenizer, config, question)
+        generated_answer = generate_answer(model, tokenizer, config, question, device)
         # Prepare for BLEU
         references.append([ref.split() for ref in reference_answers])
         hypotheses.append(generated_answer.split())
@@ -380,7 +388,7 @@ def main(config: DictConfig):
 
     initial_exact_match, initial_rouge_l, initial_rouge_l_scores = evaluate_memorization(model, tokenizer, book_dataset, device)
     initial_instruction_perplexity, initial_instruction_perplexities_list = evaluate_perplexity(model, tokenizer, instruction_dataset, device, config)
-    initial_bleu1_qa, initial_bleu2_qa, initial_bleu4_qa, initial_avg_rouge_l_qa, initial_avg_meteor_qa, initial_rouge_l_scores_qa, initial_meteor_scores_qa = evaluate_qa(model,tokenizer,config)
+    initial_bleu1_qa, initial_bleu2_qa, initial_bleu4_qa, initial_avg_rouge_l_qa, initial_avg_meteor_qa, initial_rouge_l_scores_qa, initial_meteor_scores_qa = evaluate_qa(model,tokenizer,config,device)
     initial_results = {
         "instruction_perplexity": initial_instruction_perplexity,
         "instruction_perplexities_list": initial_instruction_perplexities_list,
@@ -439,7 +447,7 @@ def main(config: DictConfig):
 
     final_exact_match, final_rouge_l, final_rouge_l_scores = evaluate_memorization(model, tokenizer, book_dataset, device)
     final_instruction_perplexity, final_instruction_perplexities_list = evaluate_perplexity(model, tokenizer, instruction_dataset, device, config)
-    final_bleu1_qa, final_bleu2_qa, final_bleu4_qa, final_avg_rouge_l_qa, final_avg_meteor_qa, final_rouge_l_scores_qa, final_meteor_scores_qa = evaluate_qa(model,tokenizer,config)
+    final_bleu1_qa, final_bleu2_qa, final_bleu4_qa, final_avg_rouge_l_qa, final_avg_meteor_qa, final_rouge_l_scores_qa, final_meteor_scores_qa = evaluate_qa(model,tokenizer,config,device)
     final_results = {
         "instruction_perplexity": final_instruction_perplexity,
         "instruction_perplexities_list": final_instruction_perplexities_list,

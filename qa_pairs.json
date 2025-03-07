@@ -1,0 +1,93 @@
+[
+    {
+      "question": {
+        "text": "When did Mrs. Ferrars die?"
+      },
+      "answers": [
+        {"text": "On the night of the 16th–17th September."},
+        {"text": "The 16th–17th of September."}
+      ]
+    },
+    {
+      "question": {
+        "text": "What time did Dr. Sheppard arrive at Mrs. Ferrars' house on the morning of the 17th?"
+      },
+      "answers": [
+        {"text": "At eight o'clock on the morning of Friday the 17th."},
+        {"text": "8 AM on Friday, the 17th."}
+      ]
+    },
+    {
+      "question": {
+        "text": "Why was Dr. Sheppard delayed when he returned home on the morning of the 17th?"
+      },
+      "answers": [
+        {"text": "Because he was upset and worried."},
+        {"text": "He was feeling upset and worried."}
+      ]
+    },
+    {
+      "question": {
+        "text": "What was the sound Dr. Sheppard heard from the dining room when he returned home?"
+      },
+      "answers": [
+        {"text": "The rattle of tea-cups and the short, dry cough of his sister Caroline."},
+        {"text": "The rattle of tea-cups and Caroline's dry cough."}
+      ]
+    },
+    {
+      "question": {
+        "text": "How does Dr. Sheppard describe his sister Caroline?"
+      },
+      "answers": [
+        {"text": "As someone very good at finding out information and spreading it."},
+        {"text": "As a person who is excellent at gathering and spreading information."}
+      ]
+    },
+    {
+      "question": {
+        "text": "Why does Dr. Sheppard withhold information from his sister Caroline?"
+      },
+      "answers": [
+        {"text": "Because whatever he tells her will become common knowledge throughout the village."},
+        {"text": "To prevent the information from spreading all over the village."}
+      ]
+    },
+    {
+      "question": {
+        "text": "What does Caroline believe about Mrs. Ferrars' husband's death?"
+      },
+      "answers": [
+        {"text": "That Mrs. Ferrars poisoned her husband."},
+        {"text": "That Mrs. Ferrars caused her husband's death by poisoning."}
+      ]
+    },
+    {
+      "question": {
+        "text": "Why does Dr. Sheppard feel pangs of indecision when he returns home?"
+      },
+      "answers": [
+        {"text": "Because he is worried about what to tell his sister Caroline."},
+        {"text": "Because he knows anything he tells Caroline will spread quickly through the village."}
+      ]
+    },
+    {
+      "question": {
+        "text": "What is Dr. Sheppard's attitude towards Caroline's behavior?"
+      },
+      "answers": [
+        {"text": "He is sarcastic, calling her a mongoose who gathers and spreads information easily."},
+        {"text": "He describes her behavior with sarcasm, comparing her to a mongoose."}
+      ]
+    },
+    {
+      "question": {
+        "text": "How does Dr. Sheppard characterize the way Caroline gathers information?"
+      },
+      "answers": [
+        {"text": "He describes her as gathering information by sitting at home and using the servants and tradesmen."},
+        {"text": "He humorously suggests she gathers information without leaving home, mainly through others."}
+      ]
+    }
+]
+  
