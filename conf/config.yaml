@@ -1,12 +1,11 @@
 # conf/config.yaml
 model:
   name: "HuggingFaceTB/SmolLM-1.7B-Instruct"
+  # name: "meta-llama/Llama-3.2-1B-Instruct" 
 
 data:
   book_path: "https://www.gutenberg.org/cache/epub/69087/pg69087.txt"
   chapter_start_pattern: "CHAPTER I"
-  chapter_end_pattern: "CHAPTER II"
-  instruction_dataset: "LNTANOooo/open_hermes2.5_v3"
   eval_samples: 100
   mmlu_samples: 100
   excerpt_size: 2048
@@ -14,11 +13,12 @@ data:
 training:
   learning_rate: 2e-5
   batch_size: 4
-  num_epochs: 50
+  num_epochs: 30
   max_length: 2048
+  # max_length: 128000
   gradient_accumulation_steps: 4
   optimizer: AdamW
   weight_decay: 0.01
 
 output:
-  dir: "./output_lm_finetune"
+  dir: "/home/c01joch/CISPA-az6/dprune_memorization-2024/LM_FineTune/output_lm_finetune"

@@ -12,3 +12,4 @@ numpy
 scipy
 nltk
 evaluate
+huggingface_hub[cli]

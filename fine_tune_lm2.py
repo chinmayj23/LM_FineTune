@@ -50,18 +50,20 @@ def prepare_book_dataset(config, tokenizer):
         print("Chapter start pattern not found. Starting from the beginning of the book.")
 
     # Find the second chapter or end of book
-    # chapter_end_match = re.search(config.data.chapter_end_pattern, book_text[chapter_start + 1:], re.IGNORECASE)  # Search after the first chapter
-    # if chapter_end_match:
-    #     chapter_end = chapter_start + 1 + chapter_end_match.start()  # Adjust position to full text
-    #     first_chapter_text = book_text[chapter_start:chapter_end]
-    # else:
+    chapter_end_match = re.search(config.data.chapter_end_pattern, book_text[chapter_start + 1:], re.IGNORECASE)  # Search after the first chapter
+    if chapter_end_match:
+        chapter_end = chapter_start + 1 + chapter_end_match.start()  # Adjust position to full text
+        first_chapter_text = book_text[chapter_start:chapter_end]
+    else:
     #     first_chapter_text = book_text[chapter_start:]  # Take the rest if second chapter not found
     #     print("Chapter end pattern not found. Taking the rest of the book after the first chapter.")
 
-    first_chapter_text = book_text[chapter_start:chapter_start+config.training.max_length]
+        first_chapter_text = book_text[chapter_start:chapter_start+config.training.max_length]
     
     config.data.excerpt_size = len(first_chapter_text)
-    excerpts = [first_chapter_text[i:i+config.training.max_length] for i in range(0, len(first_chapter_text), config.training.max_length)]
+
+    # excerpts = [first_chapter_text[i:i+config.training.max_length] for i in range(0, len(first_chapter_text), config.training.max_length)]
+    excerpts = [first_chapter_text]
 
     def tokenize_function(examples):
         outputs = tokenizer(examples["text"], truncation=True, padding = 'max_length', max_length=config.training.max_length, return_tensors='pt',verbose=True)
@@ -230,7 +232,8 @@ def evaluate_mmlu(model, tokenizer, device, num_samples=50):
     #                'jurisprudence', 'logical_fallacies', 'machine_learning', 'management', 'marketing', 'medical_genetics', 'miscellaneous',
     #                'moral_disputes', 'moral_scenarios', 'nutrition', 'philosophy', 'precalculus', 'professional_accounting', 
     #                'professional_law', 'professional_medicine', 'quantum_physics', 'security_studies', 'sociology', 'us_foreign_policy', 'virology']
-    mmlu_tasks = ['astronomy']
+    mmlu_tasks = ['abstract_algebra', 'anatomy', 'astronomy', 'business_ethics', 'clinical_knowledge', 
+                  'college_computer_science', 'college_mathematics', 'college_medicine', 'conceptual_physics']
     num_correct = 0
     total_questions = 0
 
@@ -298,7 +301,7 @@ def evaluate_mmlu(model, tokenizer, device, num_samples=50):
         print(f"\nMMLU Accuracy: {accuracy:.2%} ({num_correct}/{total_questions})")
         return accuracy
     
-def extract_book_qa_pairs(config, num_pairs=5):
+def extract_book_qa_pairs(config, num_pairs=9):
     dataset = load_dataset("deepmind/narrativeqa",split='test')
     target_url = config.data.book_path
     book_qa=[]
@@ -324,8 +327,8 @@ def extract_book_qa_pairs(config, num_pairs=5):
 
 def generate_answer(model, tokenizer, config, question, device):
     
-    inputs = tokenizer(question, truncation=True, padding = 'max_length', max_length=config.training.max_length,return_tensors='pt').to(device)
-    outputs = model.generate(inputs.input_ids, max_length=config.training.max_length)
+    inputs = tokenizer(question, truncation=True, padding = 'max_length', max_length=500,return_tensors='pt').to(device)
+    outputs = model.generate(**inputs, max_length=200,do_sample=False)
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return answer
 
@@ -338,6 +341,7 @@ def evaluate_qa(model, tokenizer, config, device): #Relying a little extra on Ch
     scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
     meteor = evaluate.load("meteor")
     smooth_fn = SmoothingFunction().method2
+    generated_results = []
 
     for question, reference_answers in qa_pairs:
         # Generate answer
@@ -353,9 +357,13 @@ def evaluate_qa(model, tokenizer, config, device): #Relying a little extra on Ch
         for ref in reference_answers:
             meteor_scores.append(meteor.compute(predictions=[generated_answer], references=[ref])['meteor'])
 
-        print(f"\n❓ Question: {question}")
-        print(f"✅ Reference Answer: {reference_answers[0]}")
-        print(f"🤖 Generated Answer: {generated_answer}")
+        # print(f"\nQuestion: {question}")
+        # print(f"\nReference Answer: {reference_answers[0]}")
+        # print(f"\nGenerated Answer: {generated_answer}")
+
+        generated_results.append({'question': question,
+            'reference_answer': reference_answers[0],
+            'generated_answer': generated_answer})
 
         # Calculate BLEU scores (1-gram, 2-gram, and 4-gram)
     bleu1 = corpus_bleu(references, hypotheses, weights=(1, 0, 0, 0), smoothing_function=smooth_fn)
@@ -366,7 +374,7 @@ def evaluate_qa(model, tokenizer, config, device): #Relying a little extra on Ch
     avg_rouge_l = sum(rouge_l_scores) / len(rouge_l_scores)
     avg_meteor = sum(meteor_scores) / len(meteor_scores)
 
-    return bleu1, bleu2, bleu4, avg_rouge_l, avg_meteor, rouge_l_scores, meteor_scores
+    return bleu1, bleu2, bleu4, avg_rouge_l, avg_meteor, rouge_l_scores, meteor_scores, generated_results
 
 
     
@@ -388,7 +396,7 @@ def main(config: DictConfig):
 
     initial_exact_match, initial_rouge_l, initial_rouge_l_scores = evaluate_memorization(model, tokenizer, book_dataset, device)
     initial_instruction_perplexity, initial_instruction_perplexities_list = evaluate_perplexity(model, tokenizer, instruction_dataset, device, config)
-    initial_bleu1_qa, initial_bleu2_qa, initial_bleu4_qa, initial_avg_rouge_l_qa, initial_avg_meteor_qa, initial_rouge_l_scores_qa, initial_meteor_scores_qa = evaluate_qa(model,tokenizer,config,device)
+    initial_bleu1_qa, initial_bleu2_qa, initial_bleu4_qa, initial_avg_rouge_l_qa, initial_avg_meteor_qa, initial_rouge_l_scores_qa, initial_meteor_scores_qa, initial_qa_results = evaluate_qa(model,tokenizer,config,device)
     initial_results = {
         "instruction_perplexity": initial_instruction_perplexity,
         "instruction_perplexities_list": initial_instruction_perplexities_list,
@@ -402,7 +410,8 @@ def main(config: DictConfig):
         "QA_rouge_L":initial_avg_rouge_l_qa,
         "QA_rouge_L_scores_list": initial_rouge_l_scores_qa,
         "QA_meteor":initial_avg_meteor_qa,
-        "QA_meteor_scores_list": initial_meteor_scores_qa
+        "QA_meteor_scores_list": initial_meteor_scores_qa,
+        "QA_results": initial_qa_results
     }
 
     for key, value in initial_results.items():
@@ -447,7 +456,7 @@ def main(config: DictConfig):
 
     final_exact_match, final_rouge_l, final_rouge_l_scores = evaluate_memorization(model, tokenizer, book_dataset, device)
     final_instruction_perplexity, final_instruction_perplexities_list = evaluate_perplexity(model, tokenizer, instruction_dataset, device, config)
-    final_bleu1_qa, final_bleu2_qa, final_bleu4_qa, final_avg_rouge_l_qa, final_avg_meteor_qa, final_rouge_l_scores_qa, final_meteor_scores_qa = evaluate_qa(model,tokenizer,config,device)
+    final_bleu1_qa, final_bleu2_qa, final_bleu4_qa, final_avg_rouge_l_qa, final_avg_meteor_qa, final_rouge_l_scores_qa, final_meteor_scores_qa, final_qa_results = evaluate_qa(model,tokenizer,config,device)
     final_results = {
         "instruction_perplexity": final_instruction_perplexity,
         "instruction_perplexities_list": final_instruction_perplexities_list,
@@ -461,7 +470,8 @@ def main(config: DictConfig):
         "QA_rouge_L":final_avg_rouge_l_qa,
         "QA_rouge_L_scores_list":final_rouge_l_scores_qa,
         "QA_meteor":final_avg_meteor_qa,
-        "QA_meteor_scores_list":final_meteor_scores_qa
+        "QA_meteor_scores_list":final_meteor_scores_qa,
+        "QA_results":final_qa_results
     }
 
     for key, value in final_results.items():
